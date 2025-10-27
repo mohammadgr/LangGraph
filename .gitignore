@@ -1,0 +1,6 @@
+# ignore modules folder
+node_modules/
+ssh/
+.vscode/
+.env
+dist/

@@ -1,0 +1,38 @@
+{
+  "name": "langgraph",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [
+    "langchain",
+    "langgraph",
+    "ai",
+    "aiagent"
+  ],
+  "homepage": "https://github.com/mohammadgr/LangGraph#readme",
+  "bugs": {
+    "url": "https://github.com/mohammadgr/LangGraph/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mohammadgr/LangGraph.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "ollama": "ollama run phi4-mini",
+    "start": "nodemon --watch modules --ext ts --exec \"npx tsc && node app.js\""
+  },
+  "license": "ISC",
+  "author": "Mohammad Geranmayeh",
+  "type": "module",
+  "main": "app.js",
+  "dependencies": {
+    "@langchain/core": "^1.0.1",
+    "@langchain/langgraph": "^1.0.1",
+    "@langchain/ollama": "^1.0.0",
+    "express": "^5.1.0",
+    "langchain": "^1.0.1",
+    "nodemon": "^3.1.10",
+    "typescript": "^5.9.3",
+    "zod": "^4.1.12"
+  }
+}
