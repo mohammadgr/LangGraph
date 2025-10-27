@@ -64,7 +64,7 @@ const modelWithTools = model.bindTools(tools);
 const MessagesState = z.object({
     messages: z
         .array(z.custom<BaseMessage>())
-        .register(registry, MessagesZodMeta as any),
+        .register(registry, MessagesZodMeta as any), // change type to any because had an error!
     llmCalls: z.number().optional()
 });
 
@@ -89,11 +89,11 @@ async function toolNode(state: z.infer<typeof MessagesState>) {
 
     const result: ToolMessage[] = [];
     for (const toolCall of lastMessage.tool_calls ?? []) {
-        const selectedTool = toolsByName[toolCall.name];
-        if (!selectedTool) {
+        const tool = toolsByName[toolCall.name];
+        if (!tool) {
             throw new Error(`Tool "${toolCall.name}" not found`);
         }
-        const observation = await selectedTool.invoke(toolCall);
+        const observation = await tool.invoke(toolCall);
         result.push(observation);
     }
 
