@@ -120,7 +120,7 @@ async function shouldContinue(state: z.infer<typeof MessagesState>) {
 }
 
 // Create graph
-export const agent = new StateGraph(MessagesState)
+const agent = new StateGraph(MessagesState)
     .addNode("llmCall", llmCall)
     .addNode("toolNode", toolNode)
     .addEdge(START, 'llmCall')
@@ -128,6 +128,6 @@ export const agent = new StateGraph(MessagesState)
     .addEdge("toolNode", "llmCall")
     .compile();
 
-const result = await agent.invoke({
+export const result = await agent.invoke({
     messages: [new HumanMessage("minus 56 and 8.")], // User request
 });
