@@ -1,68 +1,12 @@
-import { ChatOllama } from "@langchain/ollama";
-import { tool } from '@langchain/core/tools';
 import * as z from "zod";
-import { StateGraph, START, END } from "@langchain/langgraph";
-import { MessagesZodMeta } from "@langchain/langgraph";
-import { registry } from "@langchain/langgraph/zod";
 import { type BaseMessage } from "@langchain/core/messages";
+import { MessagesZodMeta } from "@langchain/langgraph";
 import { SystemMessage } from "@langchain/core/messages";
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
-import { HumanMessage } from "@langchain/core/messages";
+import { StateGraph, START, END } from "@langchain/langgraph";
+import { registry } from "@langchain/langgraph/zod";
 
-// Define ollama model for use in app
-const model = new ChatOllama({
-    model: "phi4-mini",
-    baseUrl: 'http://localhost:11434/',
-    temperature: 0,
-});
-
-// Define tool functions
-const add = tool(({ a, b }) => a + b, { // Tool operator
-    name: "add", // Tool name
-    description: "Add two numbers", // Tool description
-    schema: z.object({ // Tool schema
-        a: z.number().describe("First Number"),
-        b: z.number().describe("Second Number")
-    }),
-});
-
-const multiply = tool(({ a, b }) => a * b, {
-    name: "multiply",
-    description: "Multiply two numbers",
-    schema: z.object({
-        a: z.number().describe("First number"),
-        b: z.number().describe("Second number"),
-    }),
-});
-
-const divide = tool(({ a, b }) => a / b, {
-    name: "divide",
-    description: "Divide two numbers",
-    schema: z.object({
-        a: z.number().describe("First number"),
-        b: z.number().describe("Second number"),
-    }),
-});
-
-const minus = tool(({ a, b }) => a - b, {
-    name: "minus",
-    description: "Minus two numbers",
-    schema: z.object({
-        a: z.number().describe("First Number"),
-        b: z.number().describe("Second Number")
-    }),
-});
-
-// Connect tools to model
-const toolsByName = {
-    [add.name]: add,
-    [multiply.name]: multiply,
-    [divide.name]: divide,
-    [minus.name]: minus,
-};
-
-const tools = Object.values(toolsByName);
-const modelWithTools = model.bindTools(tools);
+import { modelWithTools, toolsByName } from "../modules/tools/bindTools.js";
 
 // Define StateGraph schema
 const MessagesState = z.object({
@@ -120,14 +64,10 @@ async function shouldContinue(state: z.infer<typeof MessagesState>) {
 }
 
 // Create graph
-const agent = new StateGraph(MessagesState)
+export const agent = new StateGraph(MessagesState)
     .addNode("llmCall", llmCall)
     .addNode("toolNode", toolNode)
     .addEdge(START, 'llmCall')
     .addConditionalEdges('llmCall', shouldContinue, ["toolNode", END])
     .addEdge("toolNode", "llmCall")
     .compile();
-
-export const result = await agent.invoke({
-    messages: [new HumanMessage("minus 56 and 8.")], // User request
-});
