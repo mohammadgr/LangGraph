@@ -9,16 +9,18 @@ import { SystemMessage } from "@langchain/core/messages";
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { HumanMessage } from "@langchain/core/messages";
 
+// Define ollama model for use in app
 const model = new ChatOllama({
     model: "phi4-mini",
     baseUrl: 'http://localhost:11434/',
     temperature: 0,
 });
 
-const add = tool(({ a, b }) => a + b, {
-    name: "add",
-    description: "Add two numbers",
-    schema: z.object({
+// Define tool functions
+const add = tool(({ a, b }) => a + b, { // Tool operator
+    name: "add", // Tool name
+    description: "Add two numbers", // Tool description
+    schema: z.object({ // Tool schema
         a: z.number().describe("First Number"),
         b: z.number().describe("Second Number")
     }),
@@ -51,6 +53,7 @@ const minus = tool(({ a, b }) => a - b, {
     }),
 });
 
+// Connect tools to model
 const toolsByName = {
     [add.name]: add,
     [multiply.name]: multiply,
@@ -61,20 +64,23 @@ const toolsByName = {
 const tools = Object.values(toolsByName);
 const modelWithTools = model.bindTools(tools);
 
+// Define StateGraph schema
 const MessagesState = z.object({
     messages: z
         .array(z.custom<BaseMessage>())
-        .register(registry, MessagesZodMeta as any), // change type to any because had an error!
-    llmCalls: z.number().optional()
+        .register(registry, MessagesZodMeta as any), // change type to any because had an error!   *** Array of messages like SystemMessage، HumanMessage، AIMessage، ToolMessage
+    llmCalls: z.number().optional() // Counter of model calls
 });
 
+// Define Nodes
 async function llmCall(state: z.infer<typeof MessagesState>) {
+    // Return new messages(AIMessage)
     return {
         messages: await modelWithTools.invoke([
             new SystemMessage(
                 "You are a helpful assistant tasked with performing arithmetic on a set of inputs."
             ),
-            ...state.messages,
+            ...state.messages, // Old messages
         ]),
         llmCalls: (state.llmCalls ?? 0) + 1,
     };
@@ -100,6 +106,7 @@ async function toolNode(state: z.infer<typeof MessagesState>) {
     return { messages: result };
 }
 
+// Specify graph route
 async function shouldContinue(state: z.infer<typeof MessagesState>) {
     const lastMessage = state.messages.at(-1);
 
@@ -112,7 +119,8 @@ async function shouldContinue(state: z.infer<typeof MessagesState>) {
     return END;
 }
 
-const agent = new StateGraph(MessagesState)
+// Create graph
+export const agent = new StateGraph(MessagesState)
     .addNode("llmCall", llmCall)
     .addNode("toolNode", toolNode)
     .addEdge(START, 'llmCall')
@@ -120,6 +128,6 @@ const agent = new StateGraph(MessagesState)
     .addEdge("toolNode", "llmCall")
     .compile();
 
-export const result = await agent.invoke({
-    messages: [new HumanMessage("minus 56 and 8.")],
+const result = await agent.invoke({
+    messages: [new HumanMessage("minus 56 and 8.")], // User request
 });
